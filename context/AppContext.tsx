@@ -8,22 +8,22 @@ import {
 } from "../constants/Data";
 
 type AppContextType = {
-  user:            User | null;
-  role:            string;
-  authLoading:     boolean;
-  cart:            CartItem[];
-  setCart:         React.Dispatch<React.SetStateAction<CartItem[]>>;
-  orders:          Order[];
-  setOrders:       React.Dispatch<React.SetStateAction<Order[]>>;
-  addOrder:        (order: Omit<Order, "id">) => Promise<void>;
+  user:              User | null;
+  role:              string;
+  authLoading:       boolean;
+  cart:              CartItem[];
+  setCart:           React.Dispatch<React.SetStateAction<CartItem[]>>;
+  orders:            Order[];
+  setOrders:         React.Dispatch<React.SetStateAction<Order[]>>;
+  addOrder:          (order: Omit<Order, "id">) => Promise<void>;
   updateOrderStatus: (orderId: string, status: string) => Promise<void>;
-  pizzas:          Pizza[];
-  setPizzas:       React.Dispatch<React.SetStateAction<Pizza[]>>;
-  business:        Business;
-  setBusiness:     React.Dispatch<React.SetStateAction<Business>>;
-  repartidores:    Repartidor[];
-  setRepartidores: React.Dispatch<React.SetStateAction<Repartidor[]>>;
-  cartCount:       number;
+  pizzas:            Pizza[];
+  setPizzas:         React.Dispatch<React.SetStateAction<Pizza[]>>;
+  business:          Business;
+  setBusiness:       React.Dispatch<React.SetStateAction<Business>>;
+  repartidores:      Repartidor[];
+  setRepartidores:   React.Dispatch<React.SetStateAction<Repartidor[]>>;
+  cartCount:         number;
 };
 
 const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -66,13 +66,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
         const data = snapshot.val();
         const lista: Order[] = Object.keys(data).map(key => ({
           ...data[key],
-          id: key, // usamos el key de Firebase como id
+          id: key,
         }));
-        // Ordenar por fecha descendente
         lista.sort((a, b) => String(b.date).localeCompare(String(a.date)));
         setOrders(lista);
       } else {
         setOrders([]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  // ── Cargar configuracion del negocio desde Firebase
+  useEffect(() => {
+    get(ref(database, "business")).then(snap => {
+      if (snap.exists()) setBusiness(prev => ({ ...prev, ...snap.val() }));
+    }).catch(() => {});
+  }, []);
+
+  // ── Listener del negocio en tiempo real (para que clientes vean cambios del admin al instante)
+  useEffect(() => {
+    const unsub = onValue(ref(database, "business"), (snapshot) => {
+      if (snapshot.exists()) {
+        setBusiness(prev => ({ ...prev, ...snapshot.val() }));
       }
     });
     return () => unsub();
