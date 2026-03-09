@@ -44,19 +44,19 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView style={s.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
-        {/* Back */}
+
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
           <Text style={s.backTxt}>← Volver</Text>
         </TouchableOpacity>
 
-        {/* Header */}
+
         <Text style={s.brand}>FORNO ROSSO</Text>
         <Text style={s.title}>Iniciar Sesion</Text>
         <Text style={s.sub}>Accede para gestionar tus pedidos</Text>
 
-        {/* Card */}
+
         <View style={s.card}>
-          {/* Email */}
+
           <Text style={s.label}>CORREO ELECTRONICO</Text>
           <TextInput
             style={s.input}
@@ -68,7 +68,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
           />
 
-          {/* Password */}
+
           <Text style={s.label}>CONTRASEÑA</Text>
           <TextInput
             style={s.input}
@@ -91,7 +91,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Footer */}
+
         <View style={s.row}>
           <Text style={s.footTxt}>No tienes cuenta?  </Text>
           <TouchableOpacity onPress={() => router.push("/register")}>
@@ -99,7 +99,7 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Demo credentials */}
+
         <View style={s.demo}>
           <Text style={s.demoTitle}>⚡  CREDENCIALES DEMO</Text>
           <Text style={s.demoTxt}>
