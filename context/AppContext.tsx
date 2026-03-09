@@ -58,6 +58,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, []);
 
+  // Listener de pizzas en tiempo real mejorado
+  useEffect(() => {
+    const unsub = onValue(ref(database, "pizzas"), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const lista: Pizza[] = Object.keys(data).map(key => ({
+          ...data[key], 
+          id: key,
+        }));
+        setPizzas(lista);
+      } else {
+        setPizzas([]);
+      }
+    });
+    return () => unsub();
+  }, []);
+
   // ── Listener de pedidos en tiempo real desde Firebase
   useEffect(() => {
     const ordersRef = ref(database, "orders");
