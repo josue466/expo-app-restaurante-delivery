@@ -23,7 +23,7 @@ export default function StatsScreen() {
   const delivered = orders.filter(o => o.status === "Entregado");
   const total     = delivered.reduce((a, o) => a + o.total, 0);
 
-  // Top platos de pedidos entregados
+
   const freq: Record<number, { name: string; qty: number }> = {};
   delivered.forEach(o => o.items?.forEach(it => {
     if (!freq[it.id]) freq[it.id] = { name: it.name, qty: 0 };

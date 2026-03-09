@@ -17,7 +17,7 @@ export default function CartScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Auto-cargar direccion desde Firebase
+
   useEffect(() => {
     if (!user) return;
     get(ref(database, `users/${user.uid}`)).then(snap => {
@@ -91,7 +91,7 @@ export default function CartScreen() {
       <Text style={s.title}>Mi Pedido</Text>
       <ScrollView contentContainerStyle={s.scroll}>
 
-        {/* Items */}
+
         {cart.map((item, i) => (
           <View key={i} style={s.itemCard}>
             <View style={s.itemImgBox}><Text style={{ fontSize: 24 }}>🍕</Text></View>
@@ -111,7 +111,7 @@ export default function CartScreen() {
           </View>
         ))}
 
-        {/* Toppings */}
+
         <View style={s.card}>
           <Text style={s.label}>TOPPINGS  <Text style={{ color: T.gold }}>+S/. 3 c/u</Text></Text>
           <View style={s.tGrid}>
@@ -127,7 +127,7 @@ export default function CartScreen() {
           </View>
         </View>
 
-        {/* Direccion */}
+
         <View style={s.card}>
           <Text style={s.label}>DIRECCION DE ENTREGA</Text>
           <TextInput
@@ -139,7 +139,7 @@ export default function CartScreen() {
           />
         </View>
 
-        {/* Resumen */}
+
         <View style={s.card}>
           <View style={s.sumRow}><Text style={s.sumKey}>Subtotal</Text><Text style={s.sumVal}>S/. {subtotal}</Text></View>
           {tops.length > 0 && (

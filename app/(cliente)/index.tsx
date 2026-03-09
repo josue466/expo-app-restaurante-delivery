@@ -19,7 +19,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={s.root}>
-      {/* Top bar */}
+
       <View style={s.topBar}>
         <View>
           <Text style={s.greeting}>{user ? `Hola 👋` : "FORNO ROSSO"}</Text>
@@ -35,7 +35,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Promo banner */}
+
       {!!business.promo && (
         <View style={s.promoBanner}>
           <View style={{ flex: 1 }}>
@@ -46,7 +46,7 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Categorias — FIXED */}
+
       <View style={s.catWrapper}>
         <ScrollView
           horizontal
@@ -65,7 +65,7 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* Lista de pizzas */}
+
       <FlatList
         data={filtered}
         keyExtractor={item => String(item.id)}

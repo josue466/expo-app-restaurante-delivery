@@ -27,7 +27,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // El Guard en _layout.tsx redirige automaticamente segun el rol
+
     } catch (error: any) {
       if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
         showMessage("Correo o contrasena incorrectos");

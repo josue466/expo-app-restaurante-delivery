@@ -36,7 +36,7 @@ export default function DetailScreen() {
 
   return (
     <View style={s.root}>
-      {/* Hero */}
+
       <View style={s.hero}>
         <TouchableOpacity style={s.back} onPress={() => router.back()}>
           <Text style={s.backTxt}>← Volver</Text>
@@ -50,7 +50,7 @@ export default function DetailScreen() {
         </View>
       </View>
 
-      {/* Scroll body */}
+
       <ScrollView style={s.body} contentContainerStyle={{ paddingBottom: 20 }}>
         <Text style={s.desc}>{item.desc}</Text>
 
@@ -85,7 +85,7 @@ export default function DetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Footer button */}
+
       <View style={s.footer}>
         <TouchableOpacity style={s.addBtn} onPress={addToCart}>
           <Text style={s.addTxt}>Agregar al pedido  —  S/. {total}</Text>

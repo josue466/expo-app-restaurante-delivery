@@ -38,14 +38,14 @@ export default function TrackingScreen() {
         <Text style={s.orderLbl}>PEDIDO #{order.id}</Text>
         <Text style={s.title}>Seguimiento</Text>
 
-        {/* Hero estado */}
+
         <View style={s.card}>
           <Text style={s.statusEmoji}>{STATUS_ICON[order.status]}</Text>
           <StatusBadge status={order.status} />
           <Text style={s.statusDesc}>{DESC[order.status]}</Text>
         </View>
 
-        {/* Timeline */}
+
         <View style={s.card2}>
           {STATUS_FLOW.map((st, i) => (
             <View key={st} style={s.tRow}>
@@ -65,7 +65,7 @@ export default function TrackingScreen() {
           ))}
         </View>
 
-        {/* Resumen */}
+
         <View style={s.card2}>
           <Text style={s.secLbl}>RESUMEN</Text>
           {order.items.map((it, i) => (

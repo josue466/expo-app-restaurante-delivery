@@ -29,7 +29,7 @@ export default function EntregasScreen() {
       ))}
       <Text style={s.total}>Total:  S/. {item.total}</Text>
 
-      {/* Mapa GPS simulado */}
+
       {item.status === "En camino" && (
         <View style={s.mapBox}>
           <Text style={s.mapDot}>🛵</Text>

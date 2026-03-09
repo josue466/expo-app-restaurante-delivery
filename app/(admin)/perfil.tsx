@@ -50,7 +50,7 @@ export default function AdminPerfilScreen() {
         <Text style={s.brand}>ADMIN / COCINERO</Text>
         <Text style={s.title}>Perfil</Text>
 
-        {/* User card */}
+
         {user && (
           <View style={s.userCard}>
             <View style={s.avatar}><Text style={s.avatarTxt}>{(user.email||"A")[0].toUpperCase()}</Text></View>
@@ -61,7 +61,7 @@ export default function AdminPerfilScreen() {
           </View>
         )}
 
-        {/* Tabs */}
+
         <View style={s.tabRow}>
           {(["datos","reps"] as const).map(t => (
             <TouchableOpacity key={t} style={[s.tabBtn, tab===t && s.tabBtnOn]} onPress={() => setTab(t)}>
@@ -130,7 +130,7 @@ export default function AdminPerfilScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Modal nuevo repartidor */}
+
       <Modal visible={modal} transparent animationType="slide">
         <View style={s.overlay}>
           <View style={s.modalCard}>

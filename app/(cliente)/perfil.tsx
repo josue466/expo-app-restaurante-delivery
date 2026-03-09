@@ -101,7 +101,7 @@ export default function PerfilScreen() {
         <Text style={s.brand}>MI CUENTA</Text>
         <Text style={s.title}>Perfil</Text>
 
-        {/* Avatar */}
+
         <View style={s.userCard}>
           <View style={s.avatar}>
             <Text style={s.avatarTxt}>{initial}</Text>
@@ -110,13 +110,13 @@ export default function PerfilScreen() {
             <Text style={s.userName}>{displayName}</Text>
             <Text style={s.userEmail}>{userData?.email || user.email}</Text>
           </View>
-          {/* Boton editar */}
+
           <TouchableOpacity style={s.editBtn} onPress={() => setEditing(!editing)}>
             <Text style={s.editBtnTxt}>{editing ? "✕ Cancelar" : "✏️ Editar"}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* INFO — modo lectura */}
+
         {!editing && (
           <View style={s.infoCard}>
             {[
@@ -133,7 +133,7 @@ export default function PerfilScreen() {
           </View>
         )}
 
-        {/* INFO — modo edicion */}
+
         {editing && (
           <View style={s.editCard}>
             <Text style={s.editTitle}>Editar Informacion</Text>
@@ -170,7 +170,7 @@ export default function PerfilScreen() {
           </View>
         )}
 
-        {/* Historial de pedidos */}
+
         <Text style={s.secLbl}>MIS PEDIDOS</Text>
         {myOrders.length === 0
           ? (

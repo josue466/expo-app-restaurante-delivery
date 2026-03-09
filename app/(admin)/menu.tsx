@@ -171,7 +171,7 @@ export default function MenuAdminScreen() {
         }
       />
 
-      {/* Modal agregar plato */}
+
       <Modal visible={modalOpen} transparent animationType="slide">
         <View style={s.overlay}>
           <View style={s.modalCard}>

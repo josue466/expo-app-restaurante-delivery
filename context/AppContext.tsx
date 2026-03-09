@@ -38,7 +38,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [business, setBusiness]       = useState<Business>(INIT_BUSINESS);
   const [repartidores, setRepartidores] = useState<Repartidor[]>(INIT_REPARTIDORES);
 
-  // ── Listener de autenticacion
+  // autenticacion
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -58,7 +58,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, []);
 
-  // Listener de pizzas en tiempo real mejorado
+  // pizzas
   useEffect(() => {
     const unsub = onValue(ref(database, "pizzas"), (snapshot) => {
       if (snapshot.exists()) {
@@ -75,7 +75,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  // ── Listener de pedidos en tiempo real desde Firebase
+  // pedidos
   useEffect(() => {
     const ordersRef = ref(database, "orders");
     const unsub = onValue(ordersRef, (snapshot) => {
@@ -94,14 +94,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  // ── Cargar configuracion del negocio desde Firebase
+  // configuracion del negocio
   useEffect(() => {
     get(ref(database, "business")).then(snap => {
       if (snap.exists()) setBusiness(prev => ({ ...prev, ...snap.val() }));
     }).catch(() => {});
   }, []);
 
-  // ── Listener del negocio en tiempo real (para que clientes vean cambios del admin al instante)
+
   useEffect(() => {
     const unsub = onValue(ref(database, "business"), (snapshot) => {
       if (snapshot.exists()) {
@@ -111,13 +111,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => unsub();
   }, []);
 
-  // ── Agregar pedido a Firebase
+
   const addOrder = async (orderData: Omit<Order, "id">) => {
     const ordersRef = ref(database, "orders");
     await push(ordersRef, orderData);
   };
 
-  // ── Actualizar estado del pedido en Firebase
+
   const updateOrderStatus = async (orderId: string, status: string) => {
     await set(ref(database, `orders/${orderId}/status`), status);
   };
