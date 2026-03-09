@@ -42,12 +42,12 @@ export default function RegisterScreen() {
     setIsLoading(true);
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
-      // Guardar datos completos en Realtime Database
+
       await set(ref(database, `users/${cred.user.uid}`), {
         name,
         email,
         phone,
-        address,   // ← direccion guardada desde el registro
+        address,   
         role:      "cliente",
         createdAt: Date.now(),
       });

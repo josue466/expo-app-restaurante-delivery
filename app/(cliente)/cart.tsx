@@ -45,7 +45,7 @@ export default function CartScreen() {
 
     setLoading(true);
     try {
-      // Guardar pedido en Firebase Realtime Database
+
       await addOrder({
         clientId:   user.uid,
         clientName: user.email || "Cliente",

@@ -33,7 +33,7 @@ export default function PerfilScreen() {
   const [ePhone,   setEPhone]   = useState("");
   const [eAddress, setEAddress] = useState("");
 
-  // Cargar datos desde Firebase
+
   useEffect(() => {
     if (!user) return;
     get(ref(database, `users/${user.uid}`)).then(snap => {
@@ -47,7 +47,7 @@ export default function PerfilScreen() {
     }).catch(() => {});
   }, [user]);
 
-  // Guardar cambios en Firebase
+ 
   const saveChanges = async () => {
     if (!user) return;
     setSaving(true);

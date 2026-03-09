@@ -48,7 +48,7 @@ export default function MenuAdminScreen() {
     else Alert.alert(title, msg);
   };
 
-  // ── Agregar plato → Firebase
+  // ── Agregar plato
   const addPizza = async () => {
     if (!form.name.trim() || !form.price || !form.desc.trim()) {
       showMsg("Aviso", "Completa nombre, descripcion y precio");
@@ -78,7 +78,7 @@ export default function MenuAdminScreen() {
     }
   };
 
-  // ── Ocultar / Mostrar → Firebase
+  // ── Ocultar / Mostrar
   const toggleAvailable = async (pizza: Pizza) => {
     const newVal = !pizza.available;
     try {
@@ -91,12 +91,12 @@ export default function MenuAdminScreen() {
     }
   };
 
-  // ── Eliminar → Firebase + estado local
+  // ── Eliminar
   const deletePizza = (pizza: Pizza) => {
     const doDelete = async () => {
       try {
         await remove(ref(database, `pizzas/${pizza.id}`));
-        setPizzas(prev => prev.filter(p => p.id !== pizza.id)); // actualiza UI inmediatamente
+        setPizzas(prev => prev.filter(p => p.id !== pizza.id));
       } catch {
         showMsg("Error", "No se pudo eliminar");
       }
