@@ -19,14 +19,17 @@ function Guard() {
 
     if (!user) {
       if (!inPublic) router.replace("/");
+      return;
+    }
+
+    if (!role) return;
+
+    if (role === "admin") {
+      router.replace("/(admin)/pedidos" as any);
+    } else if (role === "repartidor") {
+      router.replace("/(repartidor)/entregas" as any);
     } else {
-      if (role === "admin") {
-        router.replace("/(admin)/pedidos");
-      } else if (role === "repartidor") {
-        router.replace("/(repartidor)/entregas");
-      } else {
-        router.replace("/(cliente)/" as any);
-      }
+      router.replace("/(cliente)/" as any);
     }
   }, [user, role, authLoading]);
 
