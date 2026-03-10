@@ -3,14 +3,15 @@ import {
   Alert, Platform, StyleSheet, TextInput, View,
   TouchableOpacity, Text, ScrollView, KeyboardAvoidingView, ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebaseConfig";
 import { T } from "../constants/theme";
 
 export default function LoginScreen() {
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
+  const [email,     setEmail]     = useState("");
+  const [password,  setPassword]  = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -27,7 +28,6 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-
     } catch (error: any) {
       if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
         showMessage("Correo o contrasena incorrectos");
@@ -42,79 +42,80 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={s.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={s.safe}>
+      <KeyboardAvoidingView style={s.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
 
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
-          <Text style={s.backTxt}>← Volver</Text>
-        </TouchableOpacity>
-
-
-        <Text style={s.brand}>FORNO ROSSO</Text>
-        <Text style={s.title}>Iniciar Sesion</Text>
-        <Text style={s.sub}>Accede para gestionar tus pedidos</Text>
-
-
-        <View style={s.card}>
-
-          <Text style={s.label}>CORREO ELECTRONICO</Text>
-          <TextInput
-            style={s.input}
-            placeholder="correo@gmail.com"
-            placeholderTextColor={T.muted}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-
-          <Text style={s.label}>CONTRASEÑA</Text>
-          <TextInput
-            style={s.input}
-            placeholder="Tu contrasena"
-            placeholderTextColor={T.muted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-          />
-
-          <TouchableOpacity
-            style={[s.btn, isLoading && s.btnOff]}
-            onPress={login}
-            disabled={isLoading}
-            activeOpacity={0.8}>
-            {isLoading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={s.btnTxt}>Iniciar Sesion</Text>}
+          <TouchableOpacity style={s.back} onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/" as any);
+          }}>
+            <Text style={s.backTxt}>← Volver</Text>
           </TouchableOpacity>
-        </View>
 
+          <Text style={s.brand}>FORNO ROSSO</Text>
+          <Text style={s.title}>Iniciar Sesion</Text>
+          <Text style={s.sub}>Accede para gestionar tus pedidos</Text>
 
-        <View style={s.row}>
-          <Text style={s.footTxt}>No tienes cuenta?  </Text>
-          <TouchableOpacity onPress={() => router.push("/register")}>
-            <Text style={s.footLink}>Registrate</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={s.card}>
+            <Text style={s.label}>CORREO ELECTRONICO</Text>
+            <TextInput
+              style={s.input}
+              placeholder="correo@gmail.com"
+              placeholderTextColor={T.muted}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
 
+            <Text style={s.label}>CONTRASEÑA</Text>
+            <TextInput
+              style={s.input}
+              placeholder="Tu contrasena"
+              placeholderTextColor={T.muted}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
 
-        <View style={s.demo}>
-          <Text style={s.demoTitle}>⚡  CREDENCIALES DEMO</Text>
-          <Text style={s.demoTxt}>
-            {"Cliente    :  cliente@demo.com  /  123456\n"}
-            {"Admin      :  admin@demo.com    /  admin123\n"}
-            {"Repartidor :  repartidor@demo.com      /  rep123"}
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TouchableOpacity
+              style={[s.btn, isLoading && s.btnOff]}
+              onPress={login}
+              disabled={isLoading}
+              activeOpacity={0.8}>
+              {isLoading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={s.btnTxt}>Iniciar Sesion</Text>}
+            </TouchableOpacity>
+          </View>
+
+          <View style={s.row}>
+            <Text style={s.footTxt}>No tienes cuenta?  </Text>
+            <TouchableOpacity onPress={() => router.push("/register")}>
+              <Text style={s.footLink}>Registrate</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={s.demo}>
+            <Text style={s.demoTitle}>⚡  CREDENCIALES DEMO</Text>
+            <Text style={s.demoTxt}>
+              {"Cliente    :  cliente@demo.com  /  123456\n"}
+              {"Admin      :  admin@demo.com    /  admin123\n"}
+              {"Repartidor :  repartidor@demo.com  /  rep123"}
+            </Text>
+          </View>
+
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  root:      { flex:1, backgroundColor:T.bg },
+  safe:      { flex:1, backgroundColor:T.bg },
+  root:      { flex:1 },
   scroll:    { flexGrow:1, padding:24, paddingBottom:40 },
   back:      { marginBottom:20 },
   backTxt:   { color:T.muted, fontSize:14 },

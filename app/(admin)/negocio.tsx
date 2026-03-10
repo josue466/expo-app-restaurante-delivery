@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  SafeAreaView, Alert, Platform,
+  Alert, Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useApp } from "../../context/AppContext";
 import { T } from "../../constants/theme";
 

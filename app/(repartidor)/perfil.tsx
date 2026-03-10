@@ -1,5 +1,6 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebaseConfig";
 import { useApp } from "../../context/AppContext";
