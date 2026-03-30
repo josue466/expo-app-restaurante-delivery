@@ -22,6 +22,7 @@ export type Order = {
   total: number;
   status: string;
   date: string;
+  repartidorId?: string;
 };
 
 export type Business = {

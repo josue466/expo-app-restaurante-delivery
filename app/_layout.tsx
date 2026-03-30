@@ -55,6 +55,7 @@ export default function RootLayout() {
         <Stack.Screen name="register"     options={{ headerShown: false }} />
         <Stack.Screen name="detail"       options={{ headerShown: false }} />
         <Stack.Screen name="tracking"     options={{ headerShown: false }} />
+        <Stack.Screen name="chat"         options={{ headerShown: false }} />
         <Stack.Screen name="(cliente)"    options={{ headerShown: false }} />
         <Stack.Screen name="(admin)"      options={{ headerShown: false }} />
         <Stack.Screen name="(repartidor)" options={{ headerShown: false }} />

@@ -20,7 +20,10 @@ export default function TrackingScreen() {
 
   if (!order) return (
     <View style={s.root}>
-      <TouchableOpacity style={s.back} onPress={() => router.back()}>
+      <TouchableOpacity style={s.back} onPress={() => {
+        if (router.canGoBack()) router.back();
+        else router.replace("/(cliente)" as any);
+      }}>
         <Text style={s.backTxt}>← Volver</Text>
       </TouchableOpacity>
       <Text style={s.empty}>Pedido no encontrado</Text>
@@ -32,7 +35,10 @@ export default function TrackingScreen() {
   return (
     <View style={s.root}>
       <ScrollView contentContainerStyle={s.scroll}>
-        <TouchableOpacity style={s.back} onPress={() => router.back()}>
+        <TouchableOpacity style={s.back} onPress={() => {
+          if (router.canGoBack()) router.back();
+          else router.replace("/(cliente)" as any);
+        }}>
           <Text style={s.backTxt}>← Volver</Text>
         </TouchableOpacity>
         <Text style={s.orderLbl}>PEDIDO #{order.id}</Text>
@@ -44,6 +50,19 @@ export default function TrackingScreen() {
           <StatusBadge status={order.status} />
           <Text style={s.statusDesc}>{DESC[order.status]}</Text>
         </View>
+
+
+        {order.status === "En camino" && (
+          <TouchableOpacity
+            style={s.chatBtn}
+            onPress={() => router.push(`/chat?orderId=${order.id}&senderRole=cliente` as any)}>
+            <Text style={s.chatEmoji}>💬</Text>
+            <View>
+              <Text style={s.chatBtnTxt}>Chatear con el Repartidor</Text>
+              <Text style={s.chatBtnSub}>Pregunta dónde está o da indicaciones</Text>
+            </View>
+          </TouchableOpacity>
+        )}
 
 
         <View style={s.card2}>
@@ -88,36 +107,42 @@ export default function TrackingScreen() {
 }
 
 const s = StyleSheet.create({
-  root:       { flex:1, backgroundColor:T.bg },
-  scroll:     { padding:20, paddingBottom:40 },
-  back:       { marginBottom:12 },
-  backTxt:    { color:T.muted, fontSize:14 },
-  orderLbl:   { fontSize:10, color:T.muted, letterSpacing:3, marginBottom:4 },
-  title:      { fontSize:26, fontWeight:"800", color:T.text, marginBottom:16 },
-  empty:      { fontSize:16, color:T.muted, textAlign:"center", marginTop:40 },
-  card:       { backgroundColor:T.card, borderRadius:18, borderWidth:1, borderColor:T.border, padding:20, marginBottom:12, alignItems:"center" },
-  card2:      { backgroundColor:T.card, borderRadius:18, borderWidth:1, borderColor:T.border, padding:20, marginBottom:12 },
-  statusEmoji:{ fontSize:52, marginBottom:8 },
-  statusDesc: { fontSize:13, color:T.muted, marginTop:8, textAlign:"center" },
-  tRow:       { flexDirection:"row", gap:14, alignItems:"flex-start" },
-  tLeft:      { alignItems:"center" },
-  dot:        { width:32, height:32, borderRadius:16, justifyContent:"center", alignItems:"center" },
-  dotOn:      { backgroundColor:T.accent },
-  dotOff:     { backgroundColor:T.border },
-  dotTxt:     { color:"#fff", fontSize:12, fontWeight:"700" },
-  tLine:      { width:2, height:22, marginTop:2 },
-  tLineOn:    { backgroundColor:T.accent },
-  tLineOff:   { backgroundColor:T.border },
-  tContent:   { flex:1 },
-  tName:      { fontSize:14, color:T.muted },
-  tNameOn:    { color:T.text, fontWeight:"700" },
-  tDesc:      { fontSize:11, color:T.muted, marginTop:2 },
-  secLbl:     { fontSize:10, color:T.muted, letterSpacing:3, marginBottom:10 },
-  sumRow:     { flexDirection:"row", justifyContent:"space-between", marginBottom:6 },
-  sumItem:    { fontSize:13, color:T.muted },
-  sumPrice:   { fontSize:13, color:T.text },
-  tops:       { fontSize:12, color:T.muted, marginTop:4 },
-  totalRow:   { flexDirection:"row", justifyContent:"space-between", borderTopWidth:1, borderTopColor:T.border, marginTop:10, paddingTop:10 },
-  totalLbl:   { fontSize:16, fontWeight:"700", color:T.text },
-  totalAmt:   { fontSize:16, fontWeight:"700", color:T.accentSoft },
+  root:        { flex:1, backgroundColor:T.bg },
+  scroll:      { padding:20, paddingBottom:40 },
+  back:        { marginBottom:12 },
+  backTxt:     { color:T.muted, fontSize:14 },
+  orderLbl:    { fontSize:10, color:T.muted, letterSpacing:3, marginBottom:4 },
+  title:       { fontSize:26, fontWeight:"800", color:T.text, marginBottom:16 },
+  empty:       { fontSize:16, color:T.muted, textAlign:"center", marginTop:40 },
+  card:        { backgroundColor:T.card, borderRadius:18, borderWidth:1, borderColor:T.border, padding:20, marginBottom:12, alignItems:"center" },
+  card2:       { backgroundColor:T.card, borderRadius:18, borderWidth:1, borderColor:T.border, padding:20, marginBottom:12 },
+  statusEmoji: { fontSize:52, marginBottom:8 },
+  statusDesc:  { fontSize:13, color:T.muted, marginTop:8, textAlign:"center" },
+  // Chat button
+  chatBtn:     { flexDirection:"row", alignItems:"center", gap:14, backgroundColor:"#1a2e1a", borderRadius:18, borderWidth:1, borderColor:"#22c55e44", padding:16, marginBottom:12 },
+  chatEmoji:   { fontSize:32 },
+  chatBtnTxt:  { fontSize:14, fontWeight:"700", color:"#22c55e" },
+  chatBtnSub:  { fontSize:11, color:T.muted, marginTop:2 },
+  // Timeline
+  tRow:        { flexDirection:"row", gap:14, alignItems:"flex-start" },
+  tLeft:       { alignItems:"center" },
+  dot:         { width:32, height:32, borderRadius:16, justifyContent:"center", alignItems:"center" },
+  dotOn:       { backgroundColor:T.accent },
+  dotOff:      { backgroundColor:T.border },
+  dotTxt:      { color:"#fff", fontSize:12, fontWeight:"700" },
+  tLine:       { width:2, height:22, marginTop:2 },
+  tLineOn:     { backgroundColor:T.accent },
+  tLineOff:    { backgroundColor:T.border },
+  tContent:    { flex:1 },
+  tName:       { fontSize:14, color:T.muted },
+  tNameOn:     { color:T.text, fontWeight:"700" },
+  tDesc:       { fontSize:11, color:T.muted, marginTop:2 },
+  secLbl:      { fontSize:10, color:T.muted, letterSpacing:3, marginBottom:10 },
+  sumRow:      { flexDirection:"row", justifyContent:"space-between", marginBottom:6 },
+  sumItem:     { fontSize:13, color:T.muted },
+  sumPrice:    { fontSize:13, color:T.text },
+  tops:        { fontSize:12, color:T.muted, marginTop:4 },
+  totalRow:    { flexDirection:"row", justifyContent:"space-between", borderTopWidth:1, borderTopColor:T.border, marginTop:10, paddingTop:10 },
+  totalLbl:    { fontSize:16, fontWeight:"700", color:T.text },
+  totalAmt:    { fontSize:16, fontWeight:"700", color:T.accentSoft },
 });

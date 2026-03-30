@@ -1,17 +1,48 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { ref, update } from "firebase/database";
+import * as Location from "expo-location";
+import MapView, { Marker } from "react-native-maps";
+import { database } from "../../firebaseConfig";
 import { useApp } from "../../context/AppContext";
 import StatusBadge from "../../components/StatusBadge";
 import { T } from "../../constants/theme";
 
 export default function EntregasScreen() {
-  const { orders, updateOrderStatus } = useApp();
+  const { orders, updateOrderStatus, user } = useApp();
+  const router = useRouter();
+
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationError, setLocationError] = useState("");
+
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setLocationError("Permiso de ubicacion denegado");
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude:  loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      });
+    })();
+  }, []);
 
   const ready    = orders.filter(o => o.status === "En preparacion");
-  const onTheWay = orders.filter(o => o.status === "En camino");
+  const onTheWay = orders.filter(o => o.status === "En camino" && o.repartidorId === user?.uid);
 
-  const pickup  = async (id: string) => await updateOrderStatus(id, "En camino");
+  const pickup = async (id: string) => {
+    await update(ref(database, `orders/${id}`), {
+      status:       "En camino",
+      repartidorId: user?.uid ?? "",
+    });
+  };
+
   const deliver = async (id: string) => await updateOrderStatus(id, "Entregado");
 
   const renderCard = (item: any) => (
@@ -31,12 +62,40 @@ export default function EntregasScreen() {
 
 
       {item.status === "En camino" && (
-        <View style={s.mapBox}>
-          <Text style={s.mapDot}>🛵</Text>
-          <View style={s.mapRoute} />
-          <Text style={s.mapPin}>📍</Text>
-          <Text style={s.mapLabel}>GPS REAL — EVAL. FINAL</Text>
-        </View>
+        location ? (
+          <View style={s.mapContainer}>
+            <MapView
+              style={s.map}
+              initialRegion={{
+                latitude:       location.latitude,
+                longitude:      location.longitude,
+                latitudeDelta:  0.01,
+                longitudeDelta: 0.01,
+              }}>
+
+              <Marker
+                coordinate={location}
+                title="Tu ubicacion"
+                description="Estás aquí 🛵"
+                pinColor={T.accent}
+              />
+
+              <Marker
+                coordinate={{ latitude: location.latitude + 0.005, longitude: location.longitude + 0.005 }}
+                title={item.clientName}
+                description={item.address}
+                pinColor="#22c55e"
+              />
+            </MapView>
+          </View>
+        ) : (
+          <View style={s.mapBox}>
+            <Text style={s.mapDot}>🛵</Text>
+            <View style={s.mapRoute} />
+            <Text style={s.mapPin}>📍</Text>
+            <Text style={s.mapLabel}>{locationError || "Obteniendo GPS..."}</Text>
+          </View>
+        )
       )}
 
       <View style={s.btnRow}>
@@ -45,10 +104,18 @@ export default function EntregasScreen() {
             <Text style={s.pickupTxt}>🛵 Recoger y Salir</Text>
           </TouchableOpacity>
         )}
+
         {item.status === "En camino" && (
-          <TouchableOpacity style={s.deliverBtn} onPress={() => deliver(item.id)}>
-            <Text style={s.deliverTxt}>✅ Confirmar Entrega</Text>
-          </TouchableOpacity>
+          <View style={s.actionRow}>
+            <TouchableOpacity
+              style={s.chatBtn}
+              onPress={() => router.push(`/chat?orderId=${item.id}&senderRole=repartidor` as any)}>
+              <Text style={s.chatTxt}>💬 Chatear</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={s.deliverBtn} onPress={() => deliver(item.id)}>
+              <Text style={s.deliverTxt}>✅ Confirmar Entrega</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
     </View>
@@ -78,28 +145,36 @@ export default function EntregasScreen() {
 }
 
 const s = StyleSheet.create({
-  root:      { flex: 1, backgroundColor: T.bg },
-  brand:     { fontSize: 10, color: T.accent, letterSpacing: 4, paddingHorizontal: 20, paddingTop: 16 },
-  title:     { fontSize: 26, fontWeight: "800", color: T.text, paddingHorizontal: 20, marginBottom: 4 },
-  list:      { padding: 20 },
-  card:      { backgroundColor: T.card, borderRadius: 18, borderWidth: 1, borderColor: T.border, padding: 16, marginBottom: 12 },
-  cardHead:  { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
-  orderId:   { fontSize: 15, fontWeight: "700", color: T.text },
-  client:    { fontSize: 12, color: T.muted, marginTop: 2 },
-  addr:      { fontSize: 12, color: T.muted, marginBottom: 6 },
-  itemLine:  { fontSize: 13, color: T.text, marginBottom: 3 },
-  total:     { fontSize: 14, fontWeight: "700", color: T.accentSoft, marginTop: 6 },
-  mapBox:    { backgroundColor: "#0a1220", borderRadius: 14, height: 90, marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", borderWidth: 1, borderColor: T.border + "44" },
-  mapDot:    { fontSize: 28 },
-  mapRoute:  { flex: 1, height: 2, backgroundColor: T.accentSoft, marginHorizontal: 8 },
-  mapPin:    { fontSize: 28 },
-  mapLabel:  { position: "absolute", bottom: 4, right: 8, fontSize: 8, color: T.accent, letterSpacing: 2 },
-  btnRow:    { marginTop: 12 },
-  pickupBtn: { backgroundColor: T.blue, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
-  pickupTxt: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  deliverBtn:{ backgroundColor: T.green, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
-  deliverTxt:{ color: "#fff", fontWeight: "700", fontSize: 14 },
-  emptyBox:  { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
-  emptyTxt:  { color: T.muted, fontSize: 15, marginBottom: 6 },
-  emptyHint: { color: T.border, fontSize: 12, textAlign: "center" },
+  root:         { flex: 1, backgroundColor: T.bg },
+  brand:        { fontSize: 10, color: T.accent, letterSpacing: 4, paddingHorizontal: 20, paddingTop: 16 },
+  title:        { fontSize: 26, fontWeight: "800", color: T.text, paddingHorizontal: 20, marginBottom: 4 },
+  list:         { padding: 20 },
+  card:         { backgroundColor: T.card, borderRadius: 18, borderWidth: 1, borderColor: T.border, padding: 16, marginBottom: 12 },
+  cardHead:     { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  orderId:      { fontSize: 15, fontWeight: "700", color: T.text },
+  client:       { fontSize: 12, color: T.muted, marginTop: 2 },
+  addr:         { fontSize: 12, color: T.muted, marginBottom: 6 },
+  itemLine:     { fontSize: 13, color: T.text, marginBottom: 3 },
+  total:        { fontSize: 14, fontWeight: "700", color: T.accentSoft, marginTop: 6 },
+  // Mapa real
+  mapContainer: { borderRadius: 14, overflow: "hidden", marginTop: 12, height: 200, borderWidth: 1, borderColor: T.border },
+  map:          { flex: 1 },
+  // Placeholder mientras carga GPS
+  mapBox:       { backgroundColor: "#0a1220", borderRadius: 14, height: 90, marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", borderWidth: 1, borderColor: T.border + "44" },
+  mapDot:       { fontSize: 28 },
+  mapRoute:     { flex: 1, height: 2, backgroundColor: T.accentSoft, marginHorizontal: 8 },
+  mapPin:       { fontSize: 28 },
+  mapLabel:     { position: "absolute", bottom: 4, right: 8, fontSize: 8, color: T.accent, letterSpacing: 2 },
+  // Botones
+  btnRow:       { marginTop: 12 },
+  pickupBtn:    { backgroundColor: T.blue, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+  pickupTxt:    { color: "#fff", fontWeight: "700", fontSize: 14 },
+  actionRow:    { flexDirection: "row", gap: 8 },
+  chatBtn:      { flex: 1, backgroundColor: "#1a2e1a", borderRadius: 12, paddingVertical: 12, alignItems: "center", borderWidth: 1, borderColor: "#22c55e44" },
+  chatTxt:      { color: "#22c55e", fontWeight: "700", fontSize: 13 },
+  deliverBtn:   { flex: 2, backgroundColor: T.green, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
+  deliverTxt:   { color: "#fff", fontWeight: "700", fontSize: 14 },
+  emptyBox:     { flex: 1, justifyContent: "center", alignItems: "center", padding: 40 },
+  emptyTxt:     { color: T.muted, fontSize: 15, marginBottom: 6 },
+  emptyHint:    { color: T.border, fontSize: 12, textAlign: "center" },
 });
