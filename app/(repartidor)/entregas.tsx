@@ -4,19 +4,28 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ref, update } from "firebase/database";
 import * as Location from "expo-location";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapViewDirections from "react-native-maps-directions";
 import { database } from "../../firebaseConfig";
 import { useApp } from "../../context/AppContext";
 import StatusBadge from "../../components/StatusBadge";
 import { T } from "../../constants/theme";
 
+const GOOGLE_MAPS_APIKEY = "AIzaSyDb1EiZ9DVXsc_iyArQP3ZprqGPLQz6bCA";
+
+
+const CLIENTE_LOCATION = {
+  latitude:  -6.8750,
+  longitude: -79.8697,
+};
+
 export default function EntregasScreen() {
   const { orders, updateOrderStatus, user } = useApp();
   const router = useRouter();
 
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [location,      setLocation]      = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationError, setLocationError] = useState("");
-
+  const [routeInfo,     setRouteInfo]     = useState<{ distance: string; duration: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -63,30 +72,64 @@ export default function EntregasScreen() {
 
       {item.status === "En camino" && (
         location ? (
-          <View style={s.mapContainer}>
-            <MapView
-              style={s.map}
-              initialRegion={{
-                latitude:       location.latitude,
-                longitude:      location.longitude,
-                latitudeDelta:  0.01,
-                longitudeDelta: 0.01,
-              }}>
+          <View>
 
-              <Marker
-                coordinate={location}
-                title="Tu ubicacion"
-                description="Estás aquí 🛵"
-                pinColor={T.accent}
-              />
+            {routeInfo && (
+              <View style={s.routeInfo}>
+                <Text style={s.routeInfoTxt}>
+                  🛣️ {routeInfo.distance} km  ·  ⏱️ {routeInfo.duration} min
+                </Text>
+              </View>
+            )}
 
-              <Marker
-                coordinate={{ latitude: location.latitude + 0.005, longitude: location.longitude + 0.005 }}
-                title={item.clientName}
-                description={item.address}
-                pinColor="#22c55e"
-              />
-            </MapView>
+            <View style={s.mapContainer}>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={s.map}
+                initialRegion={{
+                  // Centrar mapa entre repartidor y cliente
+                  latitude:       (location.latitude  + CLIENTE_LOCATION.latitude)  / 2,
+                  longitude:      (location.longitude + CLIENTE_LOCATION.longitude) / 2,
+                  latitudeDelta:  Math.abs(location.latitude  - CLIENTE_LOCATION.latitude)  * 2.5,
+                  longitudeDelta: Math.abs(location.longitude - CLIENTE_LOCATION.longitude) * 2.5,
+                }}>
+
+
+                <Marker
+                  coordinate={location}
+                  title="Tu ubicacion 🛵"
+                  description="Estás aquí"
+                  pinColor="blue"
+                />
+
+                <Marker
+                  coordinate={CLIENTE_LOCATION}
+                  title={item.clientName}
+                  description={item.address}
+                  pinColor="#22c55e"
+                />
+
+                <MapViewDirections
+                  origin={location}
+                  destination={CLIENTE_LOCATION}
+                  apikey={GOOGLE_MAPS_APIKEY}
+                  strokeWidth={4}
+                  strokeColor={T.accent}
+                  optimizeWaypoints={true}
+                  onReady={(result: any) => {
+                    setRouteInfo({
+                      distance: result.distance.toFixed(1),
+                      duration: Math.round(result.duration).toString(),
+                    });
+                    console.log(`Distancia: ${result.distance} km`);
+                    console.log(`Duracion estimada: ${result.duration} min.`);
+                  }}
+                  onError={(errorMessage: any) => {
+                    console.error("Error al trazar ruta: ", errorMessage);
+                  }}
+                />
+              </MapView>
+            </View>
           </View>
         ) : (
           <View style={s.mapBox}>
@@ -156,16 +199,15 @@ const s = StyleSheet.create({
   addr:         { fontSize: 12, color: T.muted, marginBottom: 6 },
   itemLine:     { fontSize: 13, color: T.text, marginBottom: 3 },
   total:        { fontSize: 14, fontWeight: "700", color: T.accentSoft, marginTop: 6 },
-  // Mapa real
-  mapContainer: { borderRadius: 14, overflow: "hidden", marginTop: 12, height: 200, borderWidth: 1, borderColor: T.border },
+  routeInfo:    { backgroundColor: "#1a0e06", borderRadius: 10, padding: 8, marginTop: 10, alignItems: "center", borderWidth: 1, borderColor: T.accent + "44" },
+  routeInfoTxt: { fontSize: 12, color: T.accentSoft, fontWeight: "700" },
+  mapContainer: { borderRadius: 14, overflow: "hidden", marginTop: 8, height: 355, borderWidth: 1, borderColor: T.border },
   map:          { flex: 1 },
-  // Placeholder mientras carga GPS
   mapBox:       { backgroundColor: "#0a1220", borderRadius: 14, height: 90, marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-evenly", borderWidth: 1, borderColor: T.border + "44" },
   mapDot:       { fontSize: 28 },
   mapRoute:     { flex: 1, height: 2, backgroundColor: T.accentSoft, marginHorizontal: 8 },
   mapPin:       { fontSize: 28 },
   mapLabel:     { position: "absolute", bottom: 4, right: 8, fontSize: 8, color: T.accent, letterSpacing: 2 },
-  // Botones
   btnRow:       { marginTop: 12 },
   pickupBtn:    { backgroundColor: T.blue, borderRadius: 12, paddingVertical: 12, alignItems: "center" },
   pickupTxt:    { color: "#fff", fontWeight: "700", fontSize: 14 },
