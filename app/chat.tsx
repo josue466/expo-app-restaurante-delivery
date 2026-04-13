@@ -75,11 +75,13 @@ export default function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={s.root}
-      behavior="padding"
-      keyboardVerticalOffset={Platform.OS === "android" ? 0 : 0}>
-      <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={s.root} edges={['top']}>      
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0} 
+      >
+        
         {/* Header */}
         <View style={s.header}>
           <TouchableOpacity onPress={() => {
@@ -107,14 +109,13 @@ export default function ChatScreen() {
           ListEmptyComponent={
             <View style={s.emptyBox}>
               <Text style={{ fontSize: 40, marginBottom: 10 }}>💬</Text>
-              <Text style={s.emptyTxt}>Inicia la conversacion</Text>
+              <Text style={s.emptyTxt}>Inicia la conversación</Text>
               <Text style={s.emptyHint}>Puedes preguntar "¿Dónde estás?" o "Toca el timbre"</Text>
             </View>
           }
         />
 
-        {/* Input */}
-        <View style={s.inputRow}>
+        <View style={[s.inputRow, { paddingBottom: Platform.OS === 'ios' ? 20 : 12 }]}>
           <TextInput
             style={s.input}
             value={text}
@@ -131,8 +132,9 @@ export default function ChatScreen() {
             <Text style={s.sendTxt}>Enviar</Text>
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

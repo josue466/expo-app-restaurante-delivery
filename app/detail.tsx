@@ -112,7 +112,7 @@ export default function DetailScreen() {
 
 const s = StyleSheet.create({
   root:             { flex: 1, backgroundColor: T.bg },
-  hero:             { backgroundColor: "#1a0e06", padding: 20, paddingTop: 16, alignItems: "center" },
+  hero:             { backgroundColor: "#1a0e06", padding: 20, paddingTop: 40, alignItems: "center" },
   back:             { alignSelf: "flex-start", marginBottom: 12 },
   backTxt:          { color: T.muted, fontSize: 14 },
   heroImgContainer: { width: 140, height: 140, borderRadius: 24, overflow: "hidden", marginBottom: 8, borderWidth: 2, borderColor: "#3a2010" },
