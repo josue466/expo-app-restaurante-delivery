@@ -1,12 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
   View, Text, TextInput, TouchableOpacity,
-  FlatList, StyleSheet, KeyboardAvoidingView, Platform,
+  FlatList, StyleSheet, Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ref, push, onValue } from "firebase/database";
-import { database } from "../firebaseConfig";
+import {
+  collection, addDoc, onSnapshot,
+  orderBy, query, serverTimestamp,
+} from "firebase/firestore";
+import { firestore } from "../firebaseConfig";
 import { useApp } from "../context/AppContext";
 import { T } from "../constants/theme";
 
@@ -14,7 +18,7 @@ type Msg = {
   id:     string;
   text:   string;
   sender: string;
-  time:   string;
+  time:   any;
 };
 
 export default function ChatScreen() {
@@ -22,36 +26,33 @@ export default function ChatScreen() {
   const { user } = useApp();
   const router   = useRouter();
 
-  const [msgs,  setMsgs]  = useState<Msg[]>([]);
-  const [text,  setText]  = useState("");
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [text, setText] = useState("");
   const listRef = useRef<FlatList>(null);
 
-  
   useEffect(() => {
     if (!orderId) return;
-    const unsub = onValue(ref(database, `chats/${orderId}`), (snap) => {
-      if (snap.exists()) {
-        const data = snap.val();
-        const lista: Msg[] = Object.keys(data).map(key => ({
-          id: key, ...data[key],
-        }));
-        lista.sort((a, b) => a.time.localeCompare(b.time));
-        setMsgs(lista);
-        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-      } else {
-        setMsgs([]);
-      }
+    const q = query(
+      collection(firestore, "chats", orderId, "messages"),
+      orderBy("time", "asc")
+    );
+    const unsub = onSnapshot(q, (snapshot) => {
+      const lista: Msg[] = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data() as Omit<Msg, "id">,
+      }));
+      setMsgs(lista);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     });
     return () => unsub();
   }, [orderId]);
 
-
   const send = async () => {
     if (!text.trim() || !orderId) return;
-    await push(ref(database, `chats/${orderId}`), {
+    await addDoc(collection(firestore, "chats", orderId, "messages"), {
       text:   text.trim(),
       sender: senderRole,
-      time:   new Date().toISOString(),
+      time:   serverTimestamp(),
     });
     setText("");
   };
@@ -65,47 +66,54 @@ export default function ChatScreen() {
         </Text>
         <Text style={[s.bubbleText, isMine && { color: "#fff" }]}>{item.text}</Text>
         <Text style={[s.bubbleTime, isMine && { color: "#fff9" }]}>
-          {new Date(item.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          {item.time?.toDate
+            ? item.time.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : ""}
         </Text>
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={s.root}>
-
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => {
-          if (router.canGoBack()) router.back();
-          else router.replace("/(cliente)" as any);
-        }}>
-          <Text style={s.backTxt}>← Volver</Text>
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={s.headerTitle}>Chat del Pedido</Text>
-          <Text style={s.headerSub}>#{String(orderId).slice(-6)}  ·  En camino 🛵</Text>
-        </View>
-        <View style={s.onlineDot} />
-      </View>
-
-
-      <FlatList
-        ref={listRef}
-        data={msgs}
-        keyExtractor={item => item.id}
-        contentContainerStyle={s.list}
-        renderItem={renderMsg}
-        ListEmptyComponent={
-          <View style={s.emptyBox}>
-            <Text style={{ fontSize: 40, marginBottom: 10 }}>💬</Text>
-            <Text style={s.emptyTxt}>Inicia la conversacion</Text>
-            <Text style={s.emptyTxt}>Puedes preguntar "¿Dónde estás?" o "Toca el timbre"</Text>
+    <KeyboardAvoidingView
+      style={s.root}
+      behavior="padding"
+      keyboardVerticalOffset={Platform.OS === "android" ? 0 : 0}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Header */}
+        <View style={s.header}>
+          <TouchableOpacity onPress={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace("/(cliente)" as any);
+          }}>
+            <Text style={s.backTxt}>← Volver</Text>
+          </TouchableOpacity>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={s.headerTitle}>Chat del Pedido</Text>
+            <Text style={s.headerSub}>#{String(orderId).slice(-6)}  ·  En camino 🛵</Text>
           </View>
-        }
-      />
+          <View style={s.onlineDot} />
+        </View>
 
+        {/* Mensajes */}
+        <FlatList
+          ref={listRef}
+          data={msgs}
+          keyExtractor={item => item.id}
+          contentContainerStyle={s.list}
+          renderItem={renderMsg}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          ListEmptyComponent={
+            <View style={s.emptyBox}>
+              <Text style={{ fontSize: 40, marginBottom: 10 }}>💬</Text>
+              <Text style={s.emptyTxt}>Inicia la conversacion</Text>
+              <Text style={s.emptyHint}>Puedes preguntar "¿Dónde estás?" o "Toca el timbre"</Text>
+            </View>
+          }
+        />
 
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        {/* Input */}
         <View style={s.inputRow}>
           <TextInput
             style={s.input}
@@ -123,8 +131,8 @@ export default function ChatScreen() {
             <Text style={s.sendTxt}>Enviar</Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 
