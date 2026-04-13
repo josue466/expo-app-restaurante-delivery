@@ -3,13 +3,19 @@ import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
 import { T } from "../constants/theme";
 import { Pizza } from "../constants/Data";
 
+const categoryEmoji = (cat: string) => {
+  if (cat === "Bebidas") return "🥤";
+  if (cat === "Postres") return "🍮";
+  return "🍕";
+};
+
 export default function FoodCard({ item, onPress }: { item: Pizza; onPress: () => void }) {
   return (
     <TouchableOpacity style={s.card} onPress={onPress} activeOpacity={0.8}>
       <View style={s.imgBox}>
         {item.img
-          ? <Image source={{ uri: item.img }} style={s.img} />
-          : <Text style={s.emoji}>🍕</Text>}
+          ? <Image source={{ uri: item.img }} style={s.img} resizeMode="cover" />
+          : <Text style={s.emoji}>{categoryEmoji(item.category)}</Text>}
       </View>
       <View style={s.info}>
         <Text style={s.name}>{item.name}</Text>
@@ -26,6 +32,7 @@ export default function FoodCard({ item, onPress }: { item: Pizza; onPress: () =
     </TouchableOpacity>
   );
 }
+
 const s = StyleSheet.create({
   card:   { backgroundColor: T.card, borderRadius: 18, borderWidth: 1, borderColor: T.border, padding: 14, flexDirection: "row", alignItems: "center", marginBottom: 12, gap: 14 },
   imgBox: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#1a0e06", justifyContent: "center", alignItems: "center", overflow: "hidden" },

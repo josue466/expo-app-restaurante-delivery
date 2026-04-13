@@ -1,10 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  TextInput, Alert, Platform, Modal, ActivityIndicator, ScrollView,
+  TextInput, Alert, Platform, Modal, ActivityIndicator,
+  ScrollView, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
+import * as ImagePicker from "expo-image-picker";
 import { ref, push, update, remove, get } from "firebase/database";
 import { database } from "../../firebaseConfig";
 import { useApp } from "../../context/AppContext";
@@ -20,13 +22,15 @@ const EMPTY_FORM = {
 
 export default function MenuAdminScreen() {
   const { pizzas, setPizzas } = useApp();
-  const [modalOpen, setModalOpen] = useState(false);
-  const [saving,    setSaving]    = useState(false);
-  const [form,      setForm]      = useState(EMPTY_FORM);
-
+  const [modalOpen,  setModalOpen]  = useState(false);
+  const [saving,     setSaving]     = useState(false);
+  const [form,       setForm]       = useState(EMPTY_FORM);
+  const [imgBase64,  setImgBase64]  = useState<string | null>(null);
+  const pickingRef = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
+      if (pickingRef.current) return;
       get(ref(database, "pizzas")).then(snapshot => {
         if (snapshot.exists()) {
           const data = snapshot.val();
@@ -48,6 +52,32 @@ export default function MenuAdminScreen() {
     else Alert.alert(title, msg);
   };
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      showMsg("Permiso denegado", "Necesitas permitir acceso a la galería");
+      return;
+    }
+    pickingRef.current = true;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.6,
+      base64: true,
+    });
+    pickingRef.current = false;
+    if (!result.canceled && result.assets[0].base64) {
+      setImgBase64(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setForm(EMPTY_FORM);
+    setImgBase64(null);
+  };
+
   // ── Agregar plato
   const addPizza = async () => {
     if (!form.name.trim() || !form.price || !form.desc.trim()) {
@@ -63,13 +93,16 @@ export default function MenuAdminScreen() {
         price:     Number(form.price),
         rating:    Number(form.rating) || 4.5,
         time:      form.time || "25 min",
-        img:       null,
+        img:       imgBase64,
         available: true,
       };
-      const result = await push(ref(database, "pizzas"), newPizza);
-      setPizzas(prev => [...prev, { ...newPizza, id: result.key as any }]);
-      setForm(EMPTY_FORM);
-      setModalOpen(false);
+      await push(ref(database, "pizzas"), newPizza);
+      const snapshot = await get(ref(database, "pizzas"));
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setPizzas(Object.keys(data).map(key => ({ ...data[key], id: key })));
+      }
+      closeModal();
       showMsg("Listo ✅", `"${newPizza.name}" agregado`);
     } catch {
       showMsg("Error", "No se pudo agregar");
@@ -134,9 +167,12 @@ export default function MenuAdminScreen() {
           <View style={s.card}>
             <View style={s.cardHead}>
               <View style={s.imgBox}>
-                <Text style={{ fontSize: 24 }}>
-                  {item.category === "Bebidas" ? "🥤" : item.category === "Postres" ? "🍮" : "🍕"}
-                </Text>
+                {item.img
+                  ? <Image source={{ uri: item.img }} style={s.cardImg} />
+                  : <Text style={{ fontSize: 24 }}>
+                      {item.category === "Bebidas" ? "🥤" : item.category === "Postres" ? "🍮" : "🍕"}
+                    </Text>
+                }
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={s.name}>{item.name}</Text>
@@ -171,7 +207,6 @@ export default function MenuAdminScreen() {
         }
       />
 
-
       <Modal visible={modalOpen} transparent animationType="slide">
         <View style={s.overlay}>
           <View style={s.modalCard}>
@@ -194,9 +229,23 @@ export default function MenuAdminScreen() {
                 ))}
               </View>
 
-              <View style={s.cameraBox}>
-                <Text style={s.cameraTxt}>📸 CAMARA / GALERIA — EVAL. FINAL</Text>
-              </View>
+              {/* ── Selector de imagen ── */}
+              <Text style={s.lbl}>IMAGEN</Text>
+              <TouchableOpacity style={s.cameraBox} onPress={pickImage} activeOpacity={0.75}>
+                {imgBase64 ? (
+                  <Image source={{ uri: imgBase64 }} style={s.previewImg} />
+                ) : (
+                  <>
+                    <Text style={{ fontSize: 28, marginBottom: 6 }}>📸</Text>
+                    <Text style={s.cameraTxt}>Toca para elegir imagen</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              {imgBase64 && (
+                <TouchableOpacity onPress={() => setImgBase64(null)} style={s.removeImgBtn}>
+                  <Text style={s.removeImgTxt}>✕ Quitar imagen</Text>
+                </TouchableOpacity>
+              )}
 
               <Text style={s.lbl}>PRECIO {isPizza ? "BASE (Personal)" : "UNITARIO"} — S/.</Text>
               <TextInput style={s.input} value={form.price}
@@ -223,8 +272,7 @@ export default function MenuAdminScreen() {
                 placeholder="Ej: 25 min" placeholderTextColor={T.muted} />
 
               <View style={s.modalBtns}>
-                <TouchableOpacity style={s.cancelBtn}
-                  onPress={() => { setModalOpen(false); setForm(EMPTY_FORM); }}>
+                <TouchableOpacity style={s.cancelBtn} onPress={closeModal}>
                   <Text style={s.cancelTxt}>Cancelar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[s.saveBtn, saving && { opacity: 0.6 }]}
@@ -243,52 +291,56 @@ export default function MenuAdminScreen() {
 }
 
 const s = StyleSheet.create({
-  root:       { flex: 1, backgroundColor: T.bg },
-  topBar:     { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", padding: 20 },
-  brand:      { fontSize: 10, color: T.accent, letterSpacing: 3 },
-  title:      { fontSize: 22, fontWeight: "800", color: T.text },
-  summary:    { fontSize: 11, color: T.muted, marginTop: 4 },
-  addBtn:     { backgroundColor: T.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
-  addBtnTxt:  { color: "#fff", fontWeight: "700" },
-  list:       { padding: 20 },
-  card:       { backgroundColor: T.card, borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: T.border },
-  cardHead:   { flexDirection: "row", gap: 12, marginBottom: 12, alignItems: "center" },
-  imgBox:     { width: 45, height: 45, borderRadius: 10, backgroundColor: "#1a0e06", justifyContent: "center", alignItems: "center" },
-  name:       { fontSize: 14, fontWeight: "700", color: T.text },
-  cat:        { fontSize: 10, color: T.muted, marginTop: 2 },
-  price:      { fontSize: 15, fontWeight: "700", color: T.accentSoft },
-  badge:      { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeOn:    { backgroundColor: "#22c55e22" },
-  badgeOff:   { backgroundColor: T.border },
-  badgeTxt:   { fontSize: 10, fontWeight: "600" },
-  actions:    { flexDirection: "row", gap: 8 },
-  actionBtn:  { flex: 1, borderRadius: 10, paddingVertical: 8, alignItems: "center" },
-  hideBtn:    { backgroundColor: T.border },
-  showBtn:    { backgroundColor: "#22c55e33" },
-  actionTxt:  { fontSize: 12, color: T.text },
-  delBtn:     { flex: 1, backgroundColor: "#ef444422", borderRadius: 10, paddingVertical: 8, alignItems: "center" },
-  delTxt:     { color: "#ef4444", fontSize: 12 },
-  emptyBox:   { alignItems: "center", paddingTop: 60 },
-  emptyTxt:   { color: T.muted, fontSize: 14 },
-  overlay:    { flex: 1, backgroundColor: "#000000bb", justifyContent: "flex-end" },
-  modalCard:  { backgroundColor: T.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "92%" },
-  modalTitle: { fontSize: 18, fontWeight: "800", color: T.text, marginBottom: 20 },
-  lbl:        { fontSize: 9, color: T.muted, letterSpacing: 2, marginBottom: 8 },
-  input:      { height: 48, backgroundColor: T.card, borderRadius: 12, paddingHorizontal: 15, color: T.text, marginBottom: 15, borderWidth: 1, borderColor: T.border },
-  inputMulti: { height: 60, textAlignVertical: "top", paddingTop: 10 },
-  catRow:     { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 15 },
-  catChip:    { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, borderWidth: 1, borderColor: T.border },
-  catChipOn:  { backgroundColor: T.accent, borderColor: T.accent },
-  catTxt:     { fontSize: 11, color: T.muted },
-  catTxtOn:   { color: "#fff" },
-  cameraBox:  { padding: 15, borderWidth: 1, borderStyle: "dashed", borderColor: T.accent, borderRadius: 12, alignItems: "center", marginBottom: 15 },
-  cameraTxt:  { fontSize: 10, color: T.accent, fontWeight: "700" },
-  previewBox: { backgroundColor: "#fbbf2411", padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: "#fbbf2433" },
-  previewLbl: { fontSize: 9, color: "#fbbf24", fontWeight: "700", marginBottom: 5 },
-  previewTxt: { fontSize: 11, color: T.text },
-  modalBtns:  { flexDirection: "row", gap: 10, marginTop: 10 },
-  cancelBtn:  { flex: 1, padding: 14, alignItems: "center" },
-  cancelTxt:  { color: T.muted },
-  saveBtn:    { flex: 1, backgroundColor: T.accent, borderRadius: 12, padding: 14, alignItems: "center" },
-  saveTxt:    { color: "#fff", fontWeight: "700" },
+  root:         { flex: 1, backgroundColor: T.bg },
+  topBar:       { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", padding: 20 },
+  brand:        { fontSize: 10, color: T.accent, letterSpacing: 3 },
+  title:        { fontSize: 22, fontWeight: "800", color: T.text },
+  summary:      { fontSize: 11, color: T.muted, marginTop: 4 },
+  addBtn:       { backgroundColor: T.accent, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  addBtnTxt:    { color: "#fff", fontWeight: "700" },
+  list:         { padding: 20 },
+  card:         { backgroundColor: T.card, borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: T.border },
+  cardHead:     { flexDirection: "row", gap: 12, marginBottom: 12, alignItems: "center" },
+  imgBox:       { width: 45, height: 45, borderRadius: 10, backgroundColor: "#1a0e06", justifyContent: "center", alignItems: "center", overflow: "hidden" },
+  cardImg:      { width: 45, height: 45, borderRadius: 10 },
+  name:         { fontSize: 14, fontWeight: "700", color: T.text },
+  cat:          { fontSize: 10, color: T.muted, marginTop: 2 },
+  price:        { fontSize: 15, fontWeight: "700", color: T.accentSoft },
+  badge:        { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeOn:      { backgroundColor: "#22c55e22" },
+  badgeOff:     { backgroundColor: T.border },
+  badgeTxt:     { fontSize: 10, fontWeight: "600" },
+  actions:      { flexDirection: "row", gap: 8 },
+  actionBtn:    { flex: 1, borderRadius: 10, paddingVertical: 8, alignItems: "center" },
+  hideBtn:      { backgroundColor: T.border },
+  showBtn:      { backgroundColor: "#22c55e33" },
+  actionTxt:    { fontSize: 12, color: T.text },
+  delBtn:       { flex: 1, backgroundColor: "#ef444422", borderRadius: 10, paddingVertical: 8, alignItems: "center" },
+  delTxt:       { color: "#ef4444", fontSize: 12 },
+  emptyBox:     { alignItems: "center", paddingTop: 60 },
+  emptyTxt:     { color: T.muted, fontSize: 14 },
+  overlay:      { flex: 1, backgroundColor: "#000000bb", justifyContent: "flex-end" },
+  modalCard:    { backgroundColor: T.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, maxHeight: "92%" },
+  modalTitle:   { fontSize: 18, fontWeight: "800", color: T.text, marginBottom: 20 },
+  lbl:          { fontSize: 9, color: T.muted, letterSpacing: 2, marginBottom: 8 },
+  input:        { height: 48, backgroundColor: T.card, borderRadius: 12, paddingHorizontal: 15, color: T.text, marginBottom: 15, borderWidth: 1, borderColor: T.border },
+  inputMulti:   { height: 60, textAlignVertical: "top", paddingTop: 10 },
+  catRow:       { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 15 },
+  catChip:      { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 15, borderWidth: 1, borderColor: T.border },
+  catChipOn:    { backgroundColor: T.accent, borderColor: T.accent },
+  catTxt:       { fontSize: 11, color: T.muted },
+  catTxtOn:     { color: "#fff" },
+  cameraBox:    { height: 120, borderWidth: 1, borderStyle: "dashed", borderColor: T.accent, borderRadius: 12, alignItems: "center", justifyContent: "center", marginBottom: 8, overflow: "hidden" },
+  previewImg:   { width: "100%", height: "100%", borderRadius: 12 },
+  cameraTxt:    { fontSize: 11, color: T.accent, fontWeight: "600" },
+  removeImgBtn: { alignSelf: "flex-end", marginBottom: 15, paddingVertical: 4, paddingHorizontal: 8 },
+  removeImgTxt: { fontSize: 11, color: "#ef4444" },
+  previewBox:   { backgroundColor: "#fbbf2411", padding: 12, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: "#fbbf2433" },
+  previewLbl:   { fontSize: 9, color: "#fbbf24", fontWeight: "700", marginBottom: 5 },
+  previewTxt:   { fontSize: 11, color: T.text },
+  modalBtns:    { flexDirection: "row", gap: 10, marginTop: 10 },
+  cancelBtn:    { flex: 1, padding: 14, alignItems: "center" },
+  cancelTxt:    { color: T.muted },
+  saveBtn:      { flex: 1, backgroundColor: T.accent, borderRadius: 12, padding: 14, alignItems: "center" },
+  saveTxt:      { color: "#fff", fontWeight: "700" },
 });

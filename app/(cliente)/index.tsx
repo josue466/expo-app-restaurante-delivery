@@ -35,7 +35,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-
       {!!business.promo && (
         <View style={s.promoBanner}>
           <View style={{ flex: 1 }}>
@@ -45,7 +44,6 @@ export default function HomeScreen() {
           <Text style={{ fontSize: 30 }}>🎉</Text>
         </View>
       )}
-
 
       <View style={s.catWrapper}>
         <ScrollView
@@ -65,7 +63,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-
       <FlatList
         data={filtered}
         keyExtractor={item => String(item.id)}
@@ -73,9 +70,10 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <FoodCard
             item={item}
-            onPress={() =>
-              router.push({ pathname: "/detail" as any, params: { itemJson: JSON.stringify(item) } })
-            }
+            onPress={() => {
+              const { img, ...itemSinImg } = item;
+              router.push({ pathname: "/detail" as any, params: { itemJson: JSON.stringify(itemSinImg) } });
+            }}
           />
         )}
         ListEmptyComponent={
@@ -97,24 +95,12 @@ const s = StyleSheet.create({
   promoBanner:  { marginHorizontal: 20, marginVertical: 8, backgroundColor: "#1a0e06", borderRadius: 16, padding: 14, borderWidth: 1, borderColor: "#3a2010", flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   promoLabel:   { fontSize: 9, color: T.gold, letterSpacing: 3, marginBottom: 4 },
   promoTxt:     { fontSize: 13, fontWeight: "700", color: T.text },
-
   catWrapper:   { paddingVertical: 10 },
   catContent:   { paddingHorizontal: 20, gap: 8, alignItems: "center" },
-  catBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
-    backgroundColor: T.card,
-    borderWidth: 1,
-    borderColor: T.border,
-    minWidth: 72,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  catBtnOn:  { backgroundColor: T.accent, borderColor: T.accent },
-  catTxt:    { fontSize: 13, color: T.muted, lineHeight: 18 },
-  catTxtOn:  { color: "#fff", fontWeight: "700" },
-
-  list:  { padding: 20 },
-  empty: { textAlign: "center", color: T.muted, marginTop: 40, fontSize: 14 },
+  catBtn:       { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 24, backgroundColor: T.card, borderWidth: 1, borderColor: T.border, minWidth: 72, alignItems: "center", justifyContent: "center" },
+  catBtnOn:     { backgroundColor: T.accent, borderColor: T.accent },
+  catTxt:       { fontSize: 13, color: T.muted, lineHeight: 18 },
+  catTxtOn:     { color: "#fff", fontWeight: "700" },
+  list:         { padding: 20 },
+  empty:        { textAlign: "center", color: T.muted, marginTop: 40, fontSize: 14 },
 });
