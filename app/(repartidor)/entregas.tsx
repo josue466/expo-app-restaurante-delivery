@@ -87,7 +87,7 @@ export default function EntregasScreen() {
                 provider={PROVIDER_GOOGLE}
                 style={s.map}
                 initialRegion={{
-                  // Centrar mapa entre repartidor y cliente
+
                   latitude:       (location.latitude  + CLIENTE_LOCATION.latitude)  / 2,
                   longitude:      (location.longitude + CLIENTE_LOCATION.longitude) / 2,
                   latitudeDelta:  Math.abs(location.latitude  - CLIENTE_LOCATION.latitude)  * 2.5,
